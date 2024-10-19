@@ -62,6 +62,7 @@ func getNewId() (int, error) {
 	return id + 1, nil
 }
 
+// List method returns the list of tasks based on the given flag.
 func (t *Task) List(flag string) ([]Task, error) {
 	defer file.Close()
 
@@ -90,9 +91,44 @@ func (t *Task) List(flag string) ([]Task, error) {
 	return tasks, nil
 }
 
+// Remove method removes the task with the given id.
+func (t *Task) Remove(id string) error {
+	defer file.Close()
+
+	// need to read the file before opening it with truncating flag
+	reader := csv.NewReader(file)
+	records, err := reader.ReadAll()
+	if err != nil {
+		return err
+	}
+
+	// open the csv file with required permissions
+	_file, err := os.OpenFile("./data/tasks.csv", os.O_WRONLY|os.O_TRUNC, 0644)
+	if err != nil {
+		return err
+	}
+	defer _file.Close()
+
+	writer := csv.NewWriter(_file)
+	defer writer.Flush()
+
+	for _, record := range records {
+		if record[0] == id {
+			continue
+		}
+
+		err := writer.Write(record)
+		if err != nil {
+			return err
+		}
+	}
+
+	return nil
+}
+
 func init() {
 	// open the csv file with required permissions
-	_file, err := os.OpenFile("./data/tasks.csv", os.O_RDWR|os.O_APPEND|os.O_CREATE, 0644)
+	_file, err := os.OpenFile("./data/tasks.csv", os.O_RDWR|os.O_APPEND, 0644)
 	if err != nil {
 		panic(err)
 	}
