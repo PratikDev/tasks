@@ -4,12 +4,15 @@ import (
 	"encoding/csv"
 	"os"
 	"strconv"
+	"strings"
 	"time"
 )
 
 type Task struct {
-	Title  string `json:"title"`
-	Status string `json:"status"`
+	ID        int    `json:"id"`
+	Title     string `json:"title"`
+	Status    string `json:"status"`
+	CreatedAt string `json:"created_at"`
 }
 
 var file *os.File
@@ -23,7 +26,7 @@ func (t *Task) New() error {
 		return err
 	}
 
-	createdAt := time.Now().Format(time.DateTime)
+	createdAt := time.Now().Format(time.RFC3339Nano)
 
 	record := []string{
 		strconv.Itoa(id),
@@ -51,12 +54,40 @@ func getNewId() (int, error) {
 		return 1, nil
 	}
 
-	id, err := strconv.ParseInt(record[len(record)-1][0], 10, 64)
+	id, err := strconv.Atoi(record[len(record)-1][0])
 	if err != nil {
 		return 0, err
 	}
 
-	return int(id) + 1, nil
+	return id + 1, nil
+}
+
+func (t *Task) List(flag string) ([]Task, error) {
+	defer file.Close()
+
+	reader := csv.NewReader(file)
+	records, err := reader.ReadAll()
+	if err != nil {
+		return nil, err
+	}
+
+	tasks := []Task{}
+	for _, record := range records[1:] {
+		if flag == "all" || strings.ToLower(record[2]) == flag {
+			id, err := strconv.Atoi(record[0])
+			if err != nil {
+				return nil, err
+			}
+			tasks = append(tasks, Task{
+				ID:        id,
+				Title:     record[1],
+				Status:    record[2],
+				CreatedAt: record[3],
+			})
+		}
+	}
+
+	return tasks, nil
 }
 
 func init() {

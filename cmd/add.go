@@ -12,6 +12,43 @@ import (
 	"github.com/spf13/pflag"
 )
 
+func runAdd(cmd *cobra.Command, args []string) error {
+	if len(args) == 0 {
+		return cmdUtils.FlagErrorf("task title is required")
+	}
+
+	title := args[0]
+	status := "Pending"
+
+	cmd.Flags().VisitAll(func(f *pflag.Flag) {
+		switch f.Name {
+		case "working":
+			if f.Changed {
+				status = "Working"
+			}
+		case "done":
+			if f.Changed {
+				status = "Done"
+			}
+		case "cancelled":
+			if f.Changed {
+				status = "Cancelled"
+			}
+		}
+	})
+
+	err := (&cmdUtils.Task{
+		Title:  title,
+		Status: status,
+	}).New()
+	if err != nil {
+		return cmdUtils.FlagErrorf(err.Error())
+	}
+
+	fmt.Printf("Task \"%s\" added successfully\n", title)
+	return nil
+}
+
 // addCmd represents the add command
 var addCmd = &cobra.Command{
 	Use:   "add [<title>]",
@@ -54,42 +91,7 @@ var addCmd = &cobra.Command{
 			tasks add "Learn Go" -c
 		`),
 	Args: cobra.MaximumNArgs(1),
-	RunE: func(cmd *cobra.Command, args []string) error {
-		if len(args) == 0 {
-			return cmdUtils.FlagErrorf("task title is required")
-		}
-
-		title := args[0]
-		status := "Pending"
-
-		cmd.Flags().VisitAll(func(f *pflag.Flag) {
-			switch f.Name {
-			case "working":
-				if f.Changed {
-					status = "Working"
-				}
-			case "done":
-				if f.Changed {
-					status = "Done"
-				}
-			case "cancelled":
-				if f.Changed {
-					status = "Cancelled"
-				}
-			}
-		})
-
-		err := (&cmdUtils.Task{
-			Title:  title,
-			Status: status,
-		}).New()
-		if err != nil {
-			return fmt.Errorf("error adding task: %w", err)
-		}
-
-		fmt.Printf("Task \"%s\" added successfully\n", title)
-		return nil
-	},
+	RunE: runAdd,
 }
 
 func init() {
