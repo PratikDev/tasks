@@ -13,10 +13,6 @@ import (
 )
 
 func runAdd(cmd *cobra.Command, args []string) error {
-	if len(args) == 0 {
-		return cmdUtils.FlagErrorf("task title is required")
-	}
-
 	title := args[0]
 	status := "Pending"
 
@@ -90,7 +86,7 @@ var addCmd = &cobra.Command{
 			# add a new task with status Cancelled
 			tasks add "Learn Go" -c
 		`),
-	Args: cobra.MaximumNArgs(1),
+	Args: cobra.ExactArgs(1),
 	RunE: runAdd,
 }
 

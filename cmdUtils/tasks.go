@@ -50,7 +50,7 @@ func (t *Task) New() error {
 func getNewId() (int, error) {
 	reader := csv.NewReader(file)
 	record, _ := reader.ReadAll()
-	if len(record) <= 1 {
+	if len(record) == 0 {
 		return 1, nil
 	}
 
@@ -73,7 +73,7 @@ func (t *Task) List(flag string) ([]Task, error) {
 	}
 
 	tasks := []Task{}
-	for _, record := range records[1:] {
+	for _, record := range records {
 		if flag == "all" || strings.ToLower(record[2]) == flag {
 			id, err := strconv.Atoi(record[0])
 			if err != nil {
@@ -121,6 +121,69 @@ func (t *Task) Remove(id string) error {
 		if err != nil {
 			return err
 		}
+	}
+
+	return nil
+}
+
+// Edit method edits the task with the given id
+func (t *Task) Edit(id string, title string, flag string) error {
+	defer file.Close()
+
+	reader := csv.NewReader(file)
+	records, err := reader.ReadAll()
+	if err != nil {
+		return err
+	}
+
+	// open the csv file with required permissions
+	_file, err := os.OpenFile("./data/tasks.csv", os.O_WRONLY|os.O_TRUNC, 0644)
+	if err != nil {
+		return err
+	}
+	defer _file.Close()
+
+	writer := csv.NewWriter(_file)
+	defer writer.Flush()
+
+	found := false
+
+	newTitle := title
+	newFlag := flag
+	for _, record := range records {
+		// if id is not found, append all the old values from record and continue
+		if record[0] != id {
+			writer.Write([]string{
+				record[0],
+				record[1],
+				record[2],
+				record[3],
+			})
+			continue
+		}
+
+		found = true
+
+		// if title is empty, set new title to the old one from record
+		if title == "" {
+			newTitle = record[1]
+		}
+
+		// if flag is empty, set new flag to the old one from record
+		if flag == "" {
+			newFlag = record[2]
+		}
+
+		writer.Write([]string{
+			id,
+			newTitle,
+			newFlag,
+			record[3],
+		})
+	}
+
+	if !found {
+		return FlagErrorf("Couldn't find a task with the given id")
 	}
 
 	return nil

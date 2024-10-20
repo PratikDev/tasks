@@ -12,10 +12,6 @@ import (
 )
 
 func runRm(cmd *cobra.Command, args []string) error {
-	if len(args) == 0 {
-		return cmdUtils.FlagErrorf("task id is required")
-	}
-
 	id := args[0]
 	err := (&cmdUtils.Task{}).Remove(id)
 	if err != nil {
@@ -35,7 +31,7 @@ var rmCmd = &cobra.Command{
 	# Remove the task with ID 1
 	tasks rm 1
 	`),
-	Args: cobra.MaximumNArgs(1),
+	Args: cobra.ExactArgs(1),
 	RunE: runRm,
 }
 

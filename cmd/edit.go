@@ -4,40 +4,81 @@ Copyright © 2024 NAME HERE <EMAIL ADDRESS>
 package cmd
 
 import (
-	"fmt"
+	"strings"
 
+	"github.com/MakeNowJust/heredoc/v2"
+	"github.com/pratikdev/tasks/cmdUtils"
 	"github.com/spf13/cobra"
+	"github.com/spf13/pflag"
 )
+
+func runEdit(cmd *cobra.Command, args []string) error {
+	id := args[0]
+
+	var flag string = ""
+	var title string = ""
+
+	cmd.Flags().VisitAll(func(f *pflag.Flag) {
+		switch f.Name {
+		case "title":
+			title = f.Value.String()
+		default:
+			if f.Changed {
+				flag = strings.ToUpper(string(f.Name[0])) + string(f.Name[1:])
+			}
+		}
+	})
+
+	if flag == "" && title == "" {
+		return cmdUtils.FlagErrorf("Title or flag is required")
+	}
+
+	err := (&cmdUtils.Task{}).Edit(id, title, flag)
+	if err != nil {
+		return cmdUtils.FlagErrorf(err.Error())
+	}
+
+	return nil
+}
 
 // editCmd represents the edit command
 var editCmd = &cobra.Command{
-	Use:   "edit",
-	Short: "A brief description of your command",
-	Long: `A longer description that spans multiple lines and likely contains examples
-and usage of using your command. For example:
+	Use:   "edit [<task-id>]",
+	Short: "Edit a task from the task list",
+	Long: heredoc.Docf(`
+	rm command edits a task from the task list. You can edit both the title and the status of a task by it's id.
 
-Cobra is a CLI library for Go that empowers applications.
-This application is a tool to generate the needed files
-to quickly create a Cobra application.`,
-	Run: func(cmd *cobra.Command, args []string) {
-		for i, arg := range args {
-			fmt.Println(i+1, arg)
-		}
-	},
+	rm command do not have any Default flags
+	`),
+	Example: heredoc.Docf(`
+	# edit the title of task with id 5
+	tasks edit 5 -t "New title"
+
+	# mark the task with id 5 as Pending
+	tasks edit 5 -p
+
+	# mark the task with id 5 as Working
+	tasks edit 5 -w
+
+	# mark the task with id 5 as Done
+	tasks edit 5 -d
+
+	# mark the task with id 5 as Cancelled
+	tasks edit 5 -c
+
+	# edit the title and mark the task with id 5 as Working
+	tasks edit 5 -t "New title" -w
+	`),
+	Args: cobra.ExactArgs(1),
+	RunE: runEdit,
 }
 
 func init() {
 	rootCmd.AddCommand(editCmd)
 
-	/*
-		Here you will define your flags and configuration settings.
-
-		Cobra supports Persistent Flags which will work for this command
-		and all subcommands, e.g.:
-		editCmd.PersistentFlags().String("foo", "", "A help for foo")
-
-		Cobra supports local flags which will only run when this command
-		is called directly, e.g.:
-		editCmd.Flags().BoolP("toggle", "t", false, "Help message for toggle")
-	*/
+	editCmd.Flags().StringP("title", "t", "", "New title for the task")
+	editCmd.Flags().BoolP("pending", "p", false, "Mark the task as Pending")
+	editCmd.Flags().BoolP("working", "w", false, "Mark the task as Working")
+	editCmd.Flags().BoolP("done", "d", false, "Mark the task as Done")
+	editCmd.Flags().BoolP("cancelled", "c", false, "Mark the task as Cancelled")
 }
