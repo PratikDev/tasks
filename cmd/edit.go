@@ -15,7 +15,7 @@ import (
 func runEdit(cmd *cobra.Command, args []string) error {
 	id := args[0]
 
-	var flag string = ""
+	var statusFlag string = ""
 	var title string = ""
 
 	cmd.Flags().VisitAll(func(f *pflag.Flag) {
@@ -24,16 +24,16 @@ func runEdit(cmd *cobra.Command, args []string) error {
 			title = f.Value.String()
 		default:
 			if f.Changed {
-				flag = strings.ToUpper(string(f.Name[0])) + string(f.Name[1:])
+				statusFlag = strings.ToUpper(string(f.Name[0])) + string(f.Name[1:])
 			}
 		}
 	})
 
-	if flag == "" && title == "" {
+	if statusFlag == "" && title == "" {
 		return cmdUtils.FlagErrorf("Title or flag is required")
 	}
 
-	err := (&cmdUtils.Task{}).Edit(id, title, flag)
+	err := (&cmdUtils.Task{}).Edit(id, title, statusFlag)
 	if err != nil {
 		return cmdUtils.FlagErrorf(err.Error())
 	}

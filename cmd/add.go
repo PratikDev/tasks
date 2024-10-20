@@ -5,6 +5,7 @@ package cmd
 
 import (
 	"fmt"
+	"strings"
 
 	"github.com/MakeNowJust/heredoc/v2"
 	"github.com/pratikdev/tasks/cmdUtils"
@@ -14,28 +15,17 @@ import (
 
 func runAdd(cmd *cobra.Command, args []string) error {
 	title := args[0]
-	status := "Pending"
+	statusFlag := "Pending"
 
 	cmd.Flags().VisitAll(func(f *pflag.Flag) {
-		switch f.Name {
-		case "working":
-			if f.Changed {
-				status = "Working"
-			}
-		case "done":
-			if f.Changed {
-				status = "Done"
-			}
-		case "cancelled":
-			if f.Changed {
-				status = "Cancelled"
-			}
+		if f.Changed {
+			statusFlag = strings.ToUpper(string(f.Name[0])) + string(f.Name[1:])
 		}
 	})
 
 	err := (&cmdUtils.Task{
 		Title:  title,
-		Status: status,
+		Status: statusFlag,
 	}).New()
 	if err != nil {
 		return cmdUtils.FlagErrorf(err.Error())

@@ -17,36 +17,21 @@ import (
 )
 
 func runLs(cmd *cobra.Command, args []string) error {
-	flag := "working"
+	statusFlag := "working"
 
 	cmd.Flags().VisitAll(func(f *pflag.Flag) {
-		switch f.Name {
-		case "all":
-			if f.Changed {
-				flag = "all"
-			}
-		case "pending":
-			if f.Changed {
-				flag = "pending"
-			}
-		case "done":
-			if f.Changed {
-				flag = "done"
-			}
-		case "cancelled":
-			if f.Changed {
-				flag = "cancelled"
-			}
+		if f.Changed {
+			statusFlag = f.Name
 		}
 	})
 
-	tasks, err := (&cmdUtils.Task{}).List(flag)
+	tasks, err := (&cmdUtils.Task{}).List(statusFlag)
 	if err != nil {
 		return cmdUtils.FlagErrorf(err.Error())
 	}
 
 	if len(tasks) == 0 {
-		fmt.Printf("No tasks found with status %s\n", flag)
+		fmt.Printf("No tasks found with status %s\n", statusFlag)
 		return nil
 	}
 

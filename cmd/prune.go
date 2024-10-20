@@ -1,40 +1,59 @@
 /*
 Copyright © 2024 NAME HERE <EMAIL ADDRESS>
-
 */
 package cmd
 
 import (
-	"fmt"
-
+	"github.com/MakeNowJust/heredoc/v2"
+	"github.com/pratikdev/tasks/cmdUtils"
 	"github.com/spf13/cobra"
+	"github.com/spf13/pflag"
 )
+
+func runPrune(cmd *cobra.Command, args []string) error {
+	statusFlag := "cancelled"
+
+	cmd.Flags().VisitAll(func(f *pflag.Flag) {
+		if f.Changed {
+			statusFlag = f.Name
+		}
+	})
+
+	err := (&cmdUtils.Task{}).Prune(statusFlag)
+	if err != nil {
+		return cmdUtils.FlagErrorf(err.Error())
+	}
+
+	return nil
+}
 
 // pruneCmd represents the prune command
 var pruneCmd = &cobra.Command{
 	Use:   "prune",
-	Short: "A brief description of your command",
-	Long: `A longer description that spans multiple lines and likely contains examples
-and usage of using your command. For example:
+	Short: "Cleans your tasks list",
+	Long:  `prune command cleans your tasks list. By default, it removes all the cancelled tasks. Optionally you can pass different flags clean tasks of other status`,
+	Example: heredoc.Docf(`
+	# Removes all the tasks with Cancelled status
+	tasks prune
 
-Cobra is a CLI library for Go that empowers applications.
-This application is a tool to generate the needed files
-to quickly create a Cobra application.`,
-	Run: func(cmd *cobra.Command, args []string) {
-		fmt.Println("prune called")
-	},
+	# Removes all the tasks with Pending status
+	tasks prune -p
+
+	# Removes all the tasks with Working status
+	tasks prune -w
+
+	# Removes all the tasks with Done status
+	tasks prune -d
+	`),
+	Args: cobra.NoArgs,
+	RunE: runPrune,
 }
 
 func init() {
 	rootCmd.AddCommand(pruneCmd)
 
-	// Here you will define your flags and configuration settings.
-
-	// Cobra supports Persistent Flags which will work for this command
-	// and all subcommands, e.g.:
-	// pruneCmd.PersistentFlags().String("foo", "", "A help for foo")
-
-	// Cobra supports local flags which will only run when this command
-	// is called directly, e.g.:
-	// pruneCmd.Flags().BoolP("toggle", "t", false, "Help message for toggle")
+	pruneCmd.Flags().BoolP("pending", "p", false, "Removes all the tasks with Pending status")
+	pruneCmd.Flags().BoolP("working", "w", false, "Removes all the tasks with Working status")
+	pruneCmd.Flags().BoolP("done", "d", false, "Removes all the tasks with Done status")
+	pruneCmd.Flags().BoolP("cancelled", "c", false, "Removes all the tasks with Cancelled status")
 }
